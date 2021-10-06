@@ -123,7 +123,6 @@ std::optional<Halfedge_Mesh::EdgeRef> Halfedge_Mesh::flip_edge(Halfedge_Mesh::Ed
     ha->set_neighbors(hc, h1, v3, e, fa);
     h2->face() = fa;
     hb->face() = f1;
-    
 
     return e;
 }
@@ -135,7 +134,45 @@ std::optional<Halfedge_Mesh::EdgeRef> Halfedge_Mesh::flip_edge(Halfedge_Mesh::Ed
 */
 std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::split_edge(Halfedge_Mesh::EdgeRef e) {
 
-    (void)e;
+    // Triangle only
+    // Get references
+    Halfedge_Mesh::HalfedgeRef h1 = e->halfedge();
+    Halfedge_Mesh::HalfedgeRef h2 = h1->next();
+    Halfedge_Mesh::HalfedgeRef h3 = h2->next();
+    Halfedge_Mesh::HalfedgeRef ha = h1->twin();
+    Halfedge_Mesh::HalfedgeRef hb = ha->next();
+    Halfedge_Mesh::HalfedgeRef hc = hb->next();   
+
+    if (h3->next() != h1 || hc->next() != ha) {
+        // not a triangle, return
+        return std::nullopt;
+    }
+    Halfedge_Mesh::VertexRef v1 = h1->vertex();
+    Halfedge_Mesh::VertexRef v3 = h3->vertex();    
+    Halfedge_Mesh::VertexRef va = ha->vertex();
+    Halfedge_Mesh::VertexRef vc = hc->vertex();
+    Halfedge_Mesh::FaceRef f1 = h1->face();
+    Halfedge_Mesh::FaceRef fa = ha->face();
+    
+    // get new components
+    Halfedge_Mesh::FaceRef f12 = Halfedge_Mesh::new_face(f1->is_boundary());
+    Halfedge_Mesh::FaceRef fa2 = Halfedge_Mesh::new_face(fa->is_boundary());
+    Halfedge_Mesh::VertexRef vnew = Halfedge_Mesh::new_vertex();
+    Halfedge_Mesh::EdgeRef enew1 = Halfedge_Mesh::new_edge();
+    Halfedge_Mesh::EdgeRef enew2 = Halfedge_Mesh::new_edge();
+    Halfedge_Mesh::EdgeRef enew3 = Halfedge_Mesh::new_edge();
+    Halfedge_Mesh::HalfedgeRef ha2 = Halfedge_Mesh::new_halfedge();
+    Halfedge_Mesh::HalfedgeRef h12 = Halfedge_Mesh::new_halfedge();
+    Halfedge_Mesh::HalfedgeRef hb2 = Halfedge_Mesh::new_halfedge();
+    Halfedge_Mesh::HalfedgeRef h22 = Halfedge_Mesh::new_halfedge();
+    Halfedge_Mesh::HalfedgeRef hc2 = Halfedge_Mesh::new_halfedge();
+    Halfedge_Mesh::HalfedgeRef h32 = Halfedge_Mesh::new_halfedge();
+
+    
+    
+
+    
+
     return std::nullopt;
 }
 
