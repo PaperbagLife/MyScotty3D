@@ -75,7 +75,12 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_face(Halfedge_Me
     flipped edge.
 */
 std::optional<Halfedge_Mesh::EdgeRef> Halfedge_Mesh::flip_edge(Halfedge_Mesh::EdgeRef e) {
-
+    if (e->on_boundary()) {
+        return std::nullopt;
+    }
+    if (e->halfedge->face->is_boundary() || e->halfedge->twin->face->is_boundary()) {
+        return std::nullopt;
+    }
     (void)e;
     return std::nullopt;
 }
