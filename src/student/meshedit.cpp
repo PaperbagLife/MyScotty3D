@@ -78,11 +78,54 @@ std::optional<Halfedge_Mesh::EdgeRef> Halfedge_Mesh::flip_edge(Halfedge_Mesh::Ed
     if (e->on_boundary()) {
         return std::nullopt;
     }
-    if (e->halfedge->face->is_boundary() || e->halfedge->twin->face->is_boundary()) {
+    Halfedge_Mesh::HalfedgeRef h1 = e->halfedge();
+    Halfedge_Mesh::HalfedgeRef ha = h1->twin();
+    if (h1->face()->is_boundary() || ha->face()->is_boundary()) {
         return std::nullopt;
     }
-    (void)e;
-    return std::nullopt;
+    // Need to get halfedge where next = h1 and next = ha
+    Halfedge_Mesh::HalfedgeRef hprev1 = h1->next();
+    while (hprev1->next() != h1) {
+        hprev1 = hprev1->next();
+    }
+    Halfedge_Mesh::HalfedgeRef hpreva = ha->next();
+    while (hpreva->next() != ha) {
+        hpreva = hpreva->next();
+    }
+    Halfedge_Mesh::VertexRef va = ha->vertex();
+    Halfedge_Mesh::VertexRef v1 = h1->vertex();
+    Halfedge_Mesh::HalfedgeRef h2 = h1->next();
+    Halfedge_Mesh::HalfedgeRef hb = ha->next();
+    Halfedge_Mesh::HalfedgeRef h3 = h1->next()->next();
+    Halfedge_Mesh::HalfedgeRef hc = ha->next()->next();
+    Halfedge_Mesh::VertexRef vc = hc->vertex();
+    Halfedge_Mesh::VertexRef v3 = h3->vertex();
+    Halfedge_Mesh::FaceRef f1 = h1->face();
+    Halfedge_Mesh::FaceRef fa = ha->face();
+
+    // Vertex assignment
+    va->halfedge() = h1->next();
+    v1->halfedge() = ha->next();
+
+    // Face assignment
+    f1->halfedge() = h1;
+    fa->halfedge() = ha;
+    // Edge assignment
+    // redundant
+    // Halfedge assignments
+    hprev1->next() = ha->next();
+    hpreva->next() = h1->next();
+
+    // set_neighbors
+    ha->next()->next() = h1;
+    h1->next()->next() = ha;
+    h1->set_neighbors(h3, ha, vc, e, f1);
+    ha->set_neighbors(hc, h1, v3, e, fa);
+    h2->face() = fa;
+    hb->face() = f1;
+    
+
+    return e;
 }
 
 /*
