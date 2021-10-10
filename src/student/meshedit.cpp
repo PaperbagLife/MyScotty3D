@@ -135,8 +135,77 @@ std::optional<Halfedge_Mesh::EdgeRef> Halfedge_Mesh::flip_edge(Halfedge_Mesh::Ed
 */
 std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::split_edge(Halfedge_Mesh::EdgeRef e) {
 
-    (void)e;
-    return std::nullopt;
+    // Check if it is triangle on both sides
+    Halfedge_Mesh::HalfedgeRef h1 = e->halfedge();
+    Halfedge_Mesh::HalfedgeRef ha = h1->twin();
+    if (h1->face()->is_boundary()) {
+        h1 = h1->twin();
+        ha = ha->twin();
+    }
+    if (h1->next()->next()->next() != h1) {
+        // Not triangle, return
+        return std::nullopt;
+    }
+    // Setup
+    Halfedge_Mesh::VertexRef va = ha->vertex();
+    Halfedge_Mesh::VertexRef v1 = h1->vertex();
+    Halfedge_Mesh::HalfedgeRef h2 = h1->next();
+    Halfedge_Mesh::HalfedgeRef hb = ha->next();
+    Halfedge_Mesh::HalfedgeRef h3 = h2->next();
+    Halfedge_Mesh::HalfedgeRef hc = hb->next();
+    Halfedge_Mesh::VertexRef vc = hc->vertex();
+    Halfedge_Mesh::VertexRef v3 = h3->vertex();
+    Halfedge_Mesh::FaceRef f1 = h1->face();
+    Halfedge_Mesh::FaceRef fa = ha->face();
+
+    // Create new edges/vertices
+    Halfedge_Mesh::VertexRef vnew = Halfedge_Mesh::new_vertex();
+    Halfedge_Mesh::EdgeRef enewdown = Halfedge_Mesh::new_edge();
+    Halfedge_Mesh::EdgeRef enewleft = Halfedge_Mesh::new_edge();
+    Halfedge_Mesh::EdgeRef enewright = Halfedge_Mesh::new_edge();
+    Halfedge_Mesh::HalfedgeRef h32 = Halfedge_Mesh::new_halfedge();
+    Halfedge_Mesh::HalfedgeRef h22 = Halfedge_Mesh::new_halfedge();
+    Halfedge_Mesh::HalfedgeRef h12 = Halfedge_Mesh::new_halfedge();
+    Halfedge_Mesh::HalfedgeRef ha2 = Halfedge_Mesh::new_halfedge();
+    Halfedge_Mesh::HalfedgeRef hb2 = Halfedge_Mesh::new_halfedge();
+    Halfedge_Mesh::HalfedgeRef hc2 = Halfedge_Mesh::new_halfedge();
+    Halfedge_Mesh::FaceRef f12 = Halfedge_Mesh::new_face();
+    Halfedge_Mesh::FaceRef fa2 = Halfedge_Mesh::new_face();
+    
+    vnew->halfedge() = h1;
+    vnew->pos = e->center();
+    enewdown->halfedge() = ha;
+    enewleft->halfedge() = h22;
+    enewright->halfedge() = hb2;
+    h12->set_neighbors(h22, ha, v1, enewdown, f12);
+    h22->set_neighbors(h3, h32, vnew, enewleft, f12);
+    h32->set_neighbors(h1, h22, v3, enewleft, f1);
+    ha2->set_neighbors(hb2, h1, va, e, fa2);
+    hb2->set_neighbors(hc, hc2, vnew, enewright, fa2);
+    hc2->set_neighbors(ha, hb2, vc, enewright, fa);
+    f12->halfedge() = h12;
+    fa2->halfedge() = ha2;
+
+    // Change old elements
+    h1->vertex() = vnew;
+    ha->vertex() = vnew;
+    ha->edge() = enewdown;
+    va->halfedge() = ha2;
+    v3->halfedge() = h32;
+    v1->halfedge() = h12;
+    vc->halfedge() = hc2;
+    h1->twin() = ha2;
+    h2->next() = h32;
+    h3->next() = h12;
+    h3->face() = f12;
+    ha->twin() = h12;
+    hb->next() = hc2;
+    hc->next() = ha2;
+    hc->face() = fa2;
+    f1->halfedge() = h1;
+    fa->halfedge() = ha;
+
+    return vnew;
 }
 
 /* Note on the beveling process:
