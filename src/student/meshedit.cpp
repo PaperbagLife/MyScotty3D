@@ -56,7 +56,29 @@ std::optional<Halfedge_Mesh::FaceRef> Halfedge_Mesh::erase_edge(Halfedge_Mesh::E
 */
 std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Mesh::EdgeRef e) {
 
-    (void)e;
+    // Check if either side is triangle
+    Halfedge_Mesh::HalfedgeRef h1 = e->halfedge();
+    Halfedge_Mesh::HalfedgeRef ha = h1->twin();
+    if (h1->face()->is_boundary()) {
+        h1 = h1->twin();
+        ha = ha->twin();
+    }
+    if (h1->next()->next()->next() == h1) {
+        // triangle, need to replace degen poly with edge
+        
+    }
+    else {
+        // Not triangle, normal sequence
+    }
+    if (ha->next()->next()->next() == ha) {
+        // triangle, replace degen
+
+    }
+    else {
+        // normal
+    }
+    
+
     return std::nullopt;
 }
 
@@ -78,30 +100,30 @@ std::optional<Halfedge_Mesh::EdgeRef> Halfedge_Mesh::flip_edge(Halfedge_Mesh::Ed
     if (e->on_boundary()) {
         return std::nullopt;
     }
-    Halfedge_Mesh::HalfedgeRef h1 = e->halfedge();
-    Halfedge_Mesh::HalfedgeRef ha = h1->twin();
+    HalfedgeRef h1 = e->halfedge();
+    HalfedgeRef ha = h1->twin();
     if (h1->face()->is_boundary() || ha->face()->is_boundary()) {
         return std::nullopt;
     }
     // Need to get halfedge where next = h1 and next = ha
-    Halfedge_Mesh::HalfedgeRef hprev1 = h1->next();
+    HalfedgeRef hprev1 = h1->next();
     while (hprev1->next() != h1) {
         hprev1 = hprev1->next();
     }
-    Halfedge_Mesh::HalfedgeRef hpreva = ha->next();
+    HalfedgeRef hpreva = ha->next();
     while (hpreva->next() != ha) {
         hpreva = hpreva->next();
     }
-    Halfedge_Mesh::VertexRef va = ha->vertex();
-    Halfedge_Mesh::VertexRef v1 = h1->vertex();
-    Halfedge_Mesh::HalfedgeRef h2 = h1->next();
-    Halfedge_Mesh::HalfedgeRef hb = ha->next();
-    Halfedge_Mesh::HalfedgeRef h3 = h1->next()->next();
-    Halfedge_Mesh::HalfedgeRef hc = ha->next()->next();
-    Halfedge_Mesh::VertexRef vc = hc->vertex();
-    Halfedge_Mesh::VertexRef v3 = h3->vertex();
-    Halfedge_Mesh::FaceRef f1 = h1->face();
-    Halfedge_Mesh::FaceRef fa = ha->face();
+    VertexRef va = ha->vertex();
+    VertexRef v1 = h1->vertex();
+    HalfedgeRef h2 = h1->next();
+    HalfedgeRef hb = ha->next();
+    HalfedgeRef h3 = h1->next()->next();
+    HalfedgeRef hc = ha->next()->next();
+    VertexRef vc = hc->vertex();
+    VertexRef v3 = h3->vertex();
+    FaceRef f1 = h1->face();
+    FaceRef fa = ha->face();
 
     // Vertex assignment
     va->halfedge() = h1->next();
@@ -136,8 +158,8 @@ std::optional<Halfedge_Mesh::EdgeRef> Halfedge_Mesh::flip_edge(Halfedge_Mesh::Ed
 std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::split_edge(Halfedge_Mesh::EdgeRef e) {
 
     // Check if it is triangle on both sides
-    Halfedge_Mesh::HalfedgeRef h1 = e->halfedge();
-    Halfedge_Mesh::HalfedgeRef ha = h1->twin();
+    HalfedgeRef h1 = e->halfedge();
+    HalfedgeRef ha = h1->twin();
     if (h1->face()->is_boundary()) {
         h1 = h1->twin();
         ha = ha->twin();
@@ -147,30 +169,30 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::split_edge(Halfedge_Mesh:
         return std::nullopt;
     }
     // Setup
-    Halfedge_Mesh::VertexRef va = ha->vertex();
-    Halfedge_Mesh::VertexRef v1 = h1->vertex();
-    Halfedge_Mesh::HalfedgeRef h2 = h1->next();
-    Halfedge_Mesh::HalfedgeRef hb = ha->next();
-    Halfedge_Mesh::HalfedgeRef h3 = h2->next();
-    Halfedge_Mesh::HalfedgeRef hc = hb->next();
-    Halfedge_Mesh::VertexRef vc = hc->vertex();
-    Halfedge_Mesh::VertexRef v3 = h3->vertex();
-    Halfedge_Mesh::FaceRef f1 = h1->face();
-    Halfedge_Mesh::FaceRef fa = ha->face();
+    VertexRef va = ha->vertex();
+    VertexRef v1 = h1->vertex();
+    HalfedgeRef h2 = h1->next();
+    HalfedgeRef hb = ha->next();
+    HalfedgeRef h3 = h2->next();
+    HalfedgeRef hc = hb->next();
+    VertexRef vc = hc->vertex();
+    VertexRef v3 = h3->vertex();
+    FaceRef f1 = h1->face();
+    FaceRef fa = ha->face();
 
     // Create new edges/vertices
-    Halfedge_Mesh::VertexRef vnew = Halfedge_Mesh::new_vertex();
-    Halfedge_Mesh::EdgeRef enewdown = Halfedge_Mesh::new_edge();
-    Halfedge_Mesh::EdgeRef enewleft = Halfedge_Mesh::new_edge();
-    Halfedge_Mesh::EdgeRef enewright = Halfedge_Mesh::new_edge();
-    Halfedge_Mesh::HalfedgeRef h32 = Halfedge_Mesh::new_halfedge();
-    Halfedge_Mesh::HalfedgeRef h22 = Halfedge_Mesh::new_halfedge();
-    Halfedge_Mesh::HalfedgeRef h12 = Halfedge_Mesh::new_halfedge();
-    Halfedge_Mesh::HalfedgeRef ha2 = Halfedge_Mesh::new_halfedge();
-    Halfedge_Mesh::HalfedgeRef hb2 = Halfedge_Mesh::new_halfedge();
-    Halfedge_Mesh::HalfedgeRef hc2 = Halfedge_Mesh::new_halfedge();
-    Halfedge_Mesh::FaceRef f12 = Halfedge_Mesh::new_face();
-    Halfedge_Mesh::FaceRef fa2 = Halfedge_Mesh::new_face();
+    VertexRef vnew = new_vertex();
+    EdgeRef enewdown = new_edge();
+    EdgeRef enewleft = new_edge();
+    EdgeRef enewright = new_edge();
+    HalfedgeRef h32 = new_halfedge();
+    HalfedgeRef h22 = new_halfedge();
+    HalfedgeRef h12 = new_halfedge();
+    HalfedgeRef ha2 = new_halfedge();
+    HalfedgeRef hb2 = new_halfedge();
+    HalfedgeRef hc2 = new_halfedge();
+    FaceRef f12 = new_face();
+    FaceRef fa2 = new_face();
     
     vnew->halfedge() = h1;
     vnew->pos = e->center();
