@@ -161,10 +161,66 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::split_edge(Halfedge_Mesh:
     HalfedgeRef h1 = e->halfedge();
     HalfedgeRef ha = h1->twin();
     if (h1->face()->is_boundary()) {
+        
         h1 = h1->twin();
         ha = ha->twin();
     }
-    if (h1->next()->next()->next() != h1) {
+    if (ha->face()->is_boundary()) {
+        if (h1->next()->next()->next() != h1) {
+            // Not triangle, return
+            return std::nullopt;
+        }
+        VertexRef va = ha->vertex();
+        VertexRef v1 = h1->vertex();
+        HalfedgeRef h2 = h1->next();
+        HalfedgeRef h3 = h2->next();
+        VertexRef v3 = h3->vertex();
+        FaceRef f1 = h1->face();
+        FaceRef fa = ha->face();
+        
+        HalfedgeRef preha = ha;
+        while (preha->next() != ha) {
+            preha = preha->next();
+        }
+
+        // Create new edges/vertices
+        VertexRef vnew = new_vertex();
+        EdgeRef enewdown = new_edge();
+        EdgeRef enewleft = new_edge();
+        HalfedgeRef h32 = new_halfedge();
+        HalfedgeRef h22 = new_halfedge();
+        HalfedgeRef h12 = new_halfedge();
+        HalfedgeRef ha2 = new_halfedge();
+        FaceRef f12 = new_face();
+        
+        vnew->halfedge() = h1;
+        vnew->pos = e->center();
+        enewdown->halfedge() = ha;
+        enewleft->halfedge() = h22;
+        h12->set_neighbors(h22, ha, v1, enewdown, f12);
+        h22->set_neighbors(h3, h32, vnew, enewleft, f12);
+        h32->set_neighbors(h1, h22, v3, enewleft, f1);
+        ha2->set_neighbors(ha, h1, va, e, fa);
+        f12->halfedge() = h12;
+
+        // Change old elements
+        h1->vertex() = vnew;
+        ha->vertex() = vnew;
+        ha->edge() = enewdown;
+        va->halfedge() = ha2;
+        v1->halfedge() = h12;
+        h1->twin() = ha2;
+        h2->next() = h32;
+        h3->next() = h12;
+        h3->face() = f12;
+        preha->next() = ha2;
+        ha->twin() = h12;
+        f1->halfedge() = h1;
+        fa->halfedge() = ha;
+
+        return vnew;
+    }
+    if (h1->next()->next()->next() != h1 || ha->next()->next()->next() != ha) {
         // Not triangle, return
         return std::nullopt;
     }
