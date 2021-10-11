@@ -145,7 +145,6 @@ std::optional<Halfedge_Mesh::EdgeRef> Halfedge_Mesh::flip_edge(Halfedge_Mesh::Ed
     ha->set_neighbors(hc, h1, v3, e, fa);
     h2->face() = fa;
     hb->face() = f1;
-    
 
     return e;
 }
@@ -157,6 +156,7 @@ std::optional<Halfedge_Mesh::EdgeRef> Halfedge_Mesh::flip_edge(Halfedge_Mesh::Ed
 */
 std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::split_edge(Halfedge_Mesh::EdgeRef e) {
 
+<<<<<<< HEAD
     // Check if it is triangle on both sides
     HalfedgeRef h1 = e->halfedge();
     HalfedgeRef ha = h1->twin();
