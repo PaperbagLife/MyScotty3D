@@ -46,8 +46,39 @@ std::optional<Halfedge_Mesh::FaceRef> Halfedge_Mesh::erase_vertex(Halfedge_Mesh:
  */
 std::optional<Halfedge_Mesh::FaceRef> Halfedge_Mesh::erase_edge(Halfedge_Mesh::EdgeRef e) {
 
-    (void)e;
-    return std::nullopt;
+    if (e->on_boundary()) {
+        return std::nullopt;
+    }
+    HalfedgeRef h1 = e->halfedge();
+    HalfedgeRef ha = h1->twin();
+    HalfedgeRef h1next = h1->next();
+    HalfedgeRef h1prev = h1->next();
+    while (h1prev->next() != h1) {
+        h1prev = h1prev->next();
+    }
+    HalfedgeRef hanext = ha->next();
+    HalfedgeRef haprev = ha->next();
+    while(haprev->next() != ha) {
+        haprev = haprev->next();
+    }
+    FaceRef f1 = h1->face();
+    FaceRef fa = ha->face();
+    VertexRef v1 = h1->vertex();
+    VertexRef va = ha->vertex();
+    erase(fa);
+    erase(e);
+    f1->halfedge() = h1next;
+    haprev->next() = h1next;
+    h1prev->next() = hanext;
+    erase(h1);
+    erase(ha);
+    hanext->face() = f1;
+    HalfedgeRef htravel = hanext->next();
+    while(htravel != hanext) {
+        htravel->face() = f1;
+        htravel = htravel->next();
+    }
+    return f1;
 }
 
 /*
