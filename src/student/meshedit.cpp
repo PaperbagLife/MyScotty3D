@@ -87,13 +87,15 @@ std::optional<Halfedge_Mesh::FaceRef> Halfedge_Mesh::erase_edge(Halfedge_Mesh::E
 */
 std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Mesh::EdgeRef e) {
 
-    // Check if either side is triangle
     Halfedge_Mesh::HalfedgeRef h1 = e->halfedge();
     Halfedge_Mesh::HalfedgeRef ha = h1->twin();
     if (h1->face()->is_boundary()) {
         h1 = h1->twin();
         ha = ha->twin();
     }
+    // Check if all edges on boundary
+    
+    // Check if either side is triangle
     if (h1->next()->next()->next() == h1) {
         // triangle, need to replace degen poly with edge
         
