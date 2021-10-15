@@ -598,10 +598,9 @@ void Halfedge_Mesh::bevel_face_positions(const std::vector<Vec3>& start_position
     {
         Vec3 pi = start_positions[i]; // get the original vertex pos
         VertexRef vi = new_halfedges[i]->vertex();
-        Vec3 tangent = face->center() - vi->pos;
-        vi->pos = pi - normal_offset * face->normal().normalize() - tangent_offset * tangent.normalize();
+        Vec3 tangent = face->center() - start_positions[i];
+        vi->pos = pi - normal_offset * face->normal() - tangent_offset * tangent.normalize();
     }
-    (void)tangent_offset;
 }
 
 /*
