@@ -2,6 +2,7 @@
 #include <queue>
 #include <set>
 #include <unordered_map>
+#include <iostream>
 
 #include "../geometry/halfedge.h"
 #include "debug.h"
@@ -390,9 +391,113 @@ std::optional<Halfedge_Mesh::FaceRef> Halfedge_Mesh::bevel_face(Halfedge_Mesh::F
 
     // Reminder: You should set the positions of new vertices (v->pos) to be exactly
     // the same as wherever they "started from."
+    if (f->is_boundary()) {
+        return std::nullopt;
+    }
+    HalfedgeRef start = f->halfedge();
+    HalfedgeRef hi = start;
+    // neex an initial vertex for the first hileft
+    VertexRef prevvtopright = new_vertex();
+    VertexRef vntopright = prevvtopright;
+    EdgeRef preveright = new_edge();
+    EdgeRef enright = preveright;
+    HalfedgeRef prevhiright = new_halfedge();
+    HalfedgeRef hnright = prevhiright;
+    FaceRef fnew = new_face();
+    std::cerr<<fnew->id()<<"fnewid\n";
+    HalfedgeRef hitoptwin = new_halfedge();
+    HalfedgeRef firsthitoptwin = hitoptwin;
+    HalfedgeRef hinexttoptwin;
+    while (hi->next() != start) {
+        // Build 1 new face with 
+        // 2 additional edges (top, right)
+        // 1 additional vertex (topright)
+        // 3 additional halfedges
+        // Keep track of hiright, which is twin of next iteration hileft.
+        // Keep track of vtopright which is vertex of next hileft.
+        // Keep track of eright, which is edge of next hileft
+        // hitop is halfedge of etop.
+        FaceRef fi = new_face();
+        std::cerr<<fi->id()<<"fiid\n";
+        EdgeRef etop = new_edge();
+        EdgeRef eright = new_edge();
+        VertexRef vtopright = new_vertex();
+        HalfedgeRef hiright = new_halfedge();
+        HalfedgeRef hitop = new_halfedge();
+        HalfedgeRef hileft = new_halfedge();
+        HalfedgeRef nextHe = hi->next();
 
-    (void)f;
-    return std::nullopt;
+        // halfedge for fnew
+        hinexttoptwin = new_halfedge();
+        
+        // set halfedges
+        VertexRef vbottomright = hi->twin()->vertex();
+        hi->next() = hiright;
+        hiright->set_neighbors(hitop, hiright, vbottomright, eright, fi);
+        hitop->set_neighbors(hileft, hitoptwin, vtopright, etop, fi);
+        hileft->set_neighbors(hi, prevhiright, prevvtopright, preveright, fi);
+        prevhiright->twin() = hileft;
+        hi->face() = fi;
+        // top halfedge
+        hitoptwin->set_neighbors(hinexttoptwin, hitop, prevvtopright, etop, fnew);
+
+        // set vertices
+        vbottomright->halfedge() = hi->twin();
+        vtopright->halfedge() = hitop;
+        vtopright->pos = vbottomright->center();
+        
+        // set edges
+        etop->halfedge() = hitop;
+        eright->halfedge() = hiright;
+
+        // set face
+        fi->halfedge() = hi;        
+        // Traverse and set variables
+        prevvtopright = vtopright;
+        preveright = eright;
+        prevhiright = hiright;
+        hitoptwin = hinexttoptwin;
+        hi = nextHe;
+    }
+    // Last face for the ring
+    FaceRef fn = new_face();
+    std::cerr<<fn->id()<<"fnid\n";
+    // 2 additional halfedge
+    HalfedgeRef hntop = new_halfedge();
+    HalfedgeRef hnleft = new_halfedge();
+    // 1 additional edge
+    EdgeRef entop = new_edge();
+    // 0 additional vertex
+    // set halfedges
+    VertexRef vbottomright = hi->twin()->vertex();
+    hi->next() = hnright;
+    hnright->set_neighbors(hntop, hnright->twin(), vbottomright, enright, fn);
+    hntop->set_neighbors(hnleft, hitoptwin, vntopright, entop, fn);
+    hnleft->set_neighbors(hi, prevhiright, prevvtopright, preveright, fn);
+    prevhiright->twin() = hnleft;
+    hi->face() = fn;
+    //top halfedge
+    hitoptwin->set_neighbors(firsthitoptwin, hntop, prevvtopright, entop, fnew);
+    fnew->halfedge() = hitoptwin;
+    // set vertices
+    vbottomright->halfedge() = hi->twin();
+    vntopright->halfedge() = hntop;
+    vntopright->pos = vbottomright->center();
+
+    // set edges
+    entop->halfedge() = hntop;
+    enright->halfedge() = hnright;
+
+    // set face
+    fn->halfedge() = hi;
+
+    // Remove intial face
+    erase(f);
+
+    // Process top face, build n halfedges where n is number of edges for f.
+    // need to set the halfedges' twin to the top halfedge of each newly created face.
+    // 
+    return fnew;
 }
 
 /*
@@ -489,12 +594,14 @@ void Halfedge_Mesh::bevel_face_positions(const std::vector<Vec3>& start_position
         new_halfedges.push_back(h);
         h = h->next();
     } while(h != face->halfedge());
-
-    (void)new_halfedges;
-    (void)start_positions;
-    (void)face;
+    for(size_t i = 0; i < new_halfedges.size(); i++)
+    {
+        Vec3 pi = start_positions[i]; // get the original vertex pos
+        VertexRef vi = new_halfedges[i]->vertex();
+        Vec3 tangent = face->center() - vi->pos;
+        vi->pos = pi - normal_offset * face->normal().normalize() - tangent_offset * tangent.normalize();
+    }
     (void)tangent_offset;
-    (void)normal_offset;
 }
 
 /*
