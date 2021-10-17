@@ -71,6 +71,10 @@ std::optional<Halfedge_Mesh::FaceRef> Halfedge_Mesh::erase_edge(Halfedge_Mesh::E
     f1->halfedge() = h1next;
     haprev->next() = h1next;
     h1prev->next() = hanext;
+    v1->halfedge() = hanext;
+    va->halfedge() = h1next;
+    h1next->vertex() = va;
+    hanext->vertex() = v1;
     erase(h1);
     erase(ha);
     hanext->face() = f1;
@@ -88,32 +92,130 @@ std::optional<Halfedge_Mesh::FaceRef> Halfedge_Mesh::erase_edge(Halfedge_Mesh::E
 */
 std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Mesh::EdgeRef e) {
 
-    Halfedge_Mesh::HalfedgeRef h1 = e->halfedge();
-    Halfedge_Mesh::HalfedgeRef ha = h1->twin();
+    HalfedgeRef h1 = e->halfedge();
+    HalfedgeRef ha = h1->twin();
     if (h1->face()->is_boundary()) {
         h1 = h1->twin();
         ha = ha->twin();
     }
-    // Check if all edges on boundary
-    
+    // Check if all edges on boundary for either
+    HalfedgeRef travel = h1;
+    bool allBoundary = true;
+    do {
+        if (!travel->edge()->on_boundary()) {
+            allBoundary = false;
+            break;
+        }
+        travel = travel->next();
+    } while(travel != h1);
+    if (allBoundary) {
+        return std::nullopt;
+    }
+    allBoundary = true;
+    travel = ha;
+    do {
+        if (!travel->edge()->on_boundary()) {
+            allBoundary = false;
+            break;
+        }
+        travel = travel->next();
+    } while(travel != ha);
+    if (allBoundary) {
+        return std::nullopt;
+    }
+
+    VertexRef vnew = new_vertex();
+    vnew->pos = e->center();
+    // Connect all out going edges from both old vertices to vnew
+    travel = h1->next()->twin()->next();
+    while (true) {
+        travel->vertex() = vnew;
+        travel = travel->twin()->next();
+        if (travel->twin() == h1) {
+            break;
+        }
+    }
+    travel = ha->next()->twin()->next();
+    while (true) {
+        travel->vertex() = vnew;
+        travel = travel->twin()->next();
+        if (travel->twin() == ha) {
+            break;
+        }
+    }
+
     // Check if either side is triangle
     if (h1->next()->next()->next() == h1) {
         // triangle, need to replace degen poly with edge
-        
+        HalfedgeRef h2 = h1->next();
+        VertexRef v2 = h2->vertex();
+        HalfedgeRef hb = h2->twin();
+        HalfedgeRef h3 = h2->next();
+        HalfedgeRef hc = h3->twin();
+        EdgeRef ec = hc->edge();
+        hc->set_neighbors(hc->next(), hb, vnew, hb->edge(), hc->face());
+        hb->set_neighbors(hb->next(), hc, vnew, hb->edge(), hb->face());
+        FaceRef f = h1->face();
+        erase(f);
+        erase(ec);
+        erase(h1->vertex());
+        erase(h1);
+        erase(h2);
+        erase(h3);
+        vnew->halfedge() = hb;
     }
     else {
         // Not triangle, normal sequence
+        HalfedgeRef h2 = h1->next();
+        HalfedgeRef hprev1 = h2;
+        FaceRef f = h1->face();
+        f->halfedge() = h2;
+        while (hprev1->next() != h1) {
+            hprev1 = hprev1->next();
+        }
+        hprev1->next() = h2;
+        h2->vertex() = vnew;
+        erase(h1->vertex());
+        erase(h1);
+        vnew->halfedge() = h2;
     }
     if (ha->next()->next()->next() == ha) {
         // triangle, replace degen
-
+        h1 = ha;
+        HalfedgeRef h2 = h1->next();
+        VertexRef v2 = h2->vertex();
+        HalfedgeRef hb = h2->twin();
+        HalfedgeRef h3 = h2->next();
+        HalfedgeRef hc = h3->twin();
+        EdgeRef ec = hc->edge();
+        hc->set_neighbors(hc->next(), hb, vnew, hb->edge(), hc->face());
+        hb->set_neighbors(hb->next(), hc, vnew, hb->edge(), hb->face());
+        FaceRef f = h1->face();
+        erase(f);
+        erase(ec);
+        erase(h1->vertex());
+        erase(h1);
+        erase(h2);
+        erase(h3);
     }
     else {
         // normal
+        h1 = ha;
+        HalfedgeRef h2 = h1->next();
+        HalfedgeRef hprev1 = h2;
+        FaceRef f = h1->face();
+        f->halfedge() = h2;
+        while (hprev1->next() != h1) {
+            hprev1 = hprev1->next();
+        }
+        hprev1->next() = h2;
+        h2->vertex() = vnew;
+        erase(h1->vertex());
+        erase(h1);
     }
-    
+    erase(e);
 
-    return std::nullopt;
+    return vnew;
 }
 
 /*
