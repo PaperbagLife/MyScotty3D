@@ -37,7 +37,12 @@
  */
 std::optional<Halfedge_Mesh::FaceRef> Halfedge_Mesh::erase_vertex(Halfedge_Mesh::VertexRef v) {
 
-    (void)v;
+    if (v->on_boundary()) {
+        return std::nullopt;
+    }
+    FaceRef newf = new_face();
+    HalfedgeRef h1 = v->halfedge();
+    erase(v);
     return std::nullopt;
 }
 
@@ -108,7 +113,7 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Me
         }
         travel = travel->next();
     } while(travel != h1);
-    if (allBoundary) {
+    if (allBoundary && !e->on_boundary()) {
         return std::nullopt;
     }
     allBoundary = true;
@@ -120,11 +125,12 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Me
         }
         travel = travel->next();
     } while(travel != ha);
-    if (allBoundary) {
+    if (allBoundary && !e->on_boundary()) {
         return std::nullopt;
     }
-
+    VertexRef v2backup = ha->vertex();
     VertexRef vnew = new_vertex();
+    std::cerr<<vnew->id()<<"vnew\n";
     vnew->pos = e->center();
     // Connect all out going edges from both old vertices to vnew
     travel = h1->next()->twin()->next();
@@ -143,6 +149,11 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Me
             break;
         }
     }
+    HalfedgeRef boundaryhc = h1->next();
+    while (boundaryhc->next() != h1) {
+        boundaryhc = boundaryhc->next();
+    }
+    boundaryhc = boundaryhc->twin();
 
     // Check if either side is triangle
     if (h1->next()->next()->next() == h1) {
@@ -160,11 +171,23 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Me
         FaceRef f = h1->face();
         e2->halfedge() = hc;
         v3->halfedge() = hb;
+        travel = v2backup->halfedge();
+        do {
+            travel->vertex() = vnew;
+            travel = travel->twin()->next();
+        } while (travel != v2backup->halfedge());
+        travel = h1->vertex()->halfedge();
+        do {
+            travel->vertex() = vnew;
+            travel = travel->twin()->next();
+        } while (travel != v2backup->halfedge());
         erase(f);
         erase(ec);
+        std::cerr<<h1->vertex()->id()<<"h1->vertex\n";
         erase(h1->vertex());
         erase(h1);
-        erase(v2);
+        std::cerr<<v2backup->id()<<"v2\n";
+        erase(v2backup);
         erase(h2);
         erase(h3);
         vnew->halfedge() = hc;
@@ -183,6 +206,18 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Me
         erase(h1->vertex());
         erase(h1);
         vnew->halfedge() = h2;
+    }
+    if (ha->face()->is_boundary()) {
+        boundaryhc->vertex() = vnew;
+        HalfedgeRef hpreva = ha->next();
+        while (hpreva->next() != ha) {
+            hpreva = hpreva->next();
+        }
+        hpreva->next() = ha->next();
+        erase(ha);
+        erase(e);
+        
+        return vnew;
     }
     if (ha->next()->next()->next() == ha) {
         // triangle, replace degen

@@ -1,11 +1,11 @@
 Local operations:
 
-EdgeCollapse: not implemented
+EdgeCollapse: Fully implemented
 
 EdgeFlip: Fully implemented
 
 EdgeSplit: Fully implemented
 
-FaceBevel: not implemented
+FaceBevel: Fully implemented
 
 EdgeErase: Fully implemented
