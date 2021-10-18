@@ -139,15 +139,12 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Me
     }
     VertexRef v2backup = ha->vertex();
     VertexRef vnew = new_vertex();
-    std::cerr<<vnew->id()<<"vnew\n";
     vnew->pos = e->center();
     // Connect all out going edges from both old vertices to vnew
     travel = h1->twin()->next();
     while (true) {
-        std::cerr<<travel->id()<<"travelid\n";
         travel->vertex() = vnew;
         travel = travel->twin()->next();
-        std::cerr<<travel->id()<<"travelafter\n";
         if (travel == h1) {
             break;
         }
@@ -169,7 +166,6 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Me
     // Check if either side is triangle
     if (h1->next()->next()->next() == h1) {
         // triangle, need to replace degen poly with edge
-        std::cerr<<"case1\n";
         HalfedgeRef h2 = h1->next();
         VertexRef v2 = h2->vertex();
         EdgeRef e2 = h2->edge();
@@ -195,7 +191,6 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Me
         vnew->halfedge() = hc;
     }
     else {
-        std::cerr<<"case2\n";
         // Not triangle, normal sequence
         HalfedgeRef h2 = h1->next();
         HalfedgeRef hprev1 = h2;
@@ -211,7 +206,6 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Me
         vnew->halfedge() = h2;
     }
     if (ha->face()->is_boundary()) {
-        std::cerr<<"case3\n";
         boundaryhc->vertex() = vnew;
         HalfedgeRef hpreva = ha->next();
         while (hpreva->next() != ha) {
@@ -226,7 +220,6 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Me
     }
     if (ha->next()->next()->next() == ha) {
         // triangle, replace degen
-        std::cerr<<"case4\n";
         h1 = ha;
         HalfedgeRef h2 = h1->next();
         VertexRef v2 = h2->vertex();
@@ -245,7 +238,6 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Me
 
         erase(f);
         erase(ec);
-        std::cerr<<h1->vertex()->id()<<"h1->vertex\n";
         erase(h1->vertex());
         erase(h1);
         erase(h2);
@@ -254,7 +246,6 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Me
     }
     else {
         // normal
-        std::cerr<<"case3\n";
         h1 = ha;
         HalfedgeRef h2 = h1->next();
         HalfedgeRef hprev1 = h2;
