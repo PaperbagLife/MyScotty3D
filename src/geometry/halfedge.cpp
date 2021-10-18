@@ -4,6 +4,7 @@
 #include <map>
 #include <set>
 #include <sstream>
+#include <iostream>
 #include <unordered_map>
 
 #include "../gui/widgets.h"
@@ -386,9 +387,11 @@ std::optional<std::pair<Halfedge_Mesh::ElementRef, std::string>> Halfedge_Mesh::
             return {{h, "A live halfedge's next was erased!"}};
         }
         if(herased.find(h->twin()) != herased.end()) {
+            std::cerr<<h->id()<<"hid\n"<<h->twin()->id()<<"idoftwin\n";
             return {{h, "A live halfedge's twin was erased!"}};
         }
         if(verased.find(h->vertex()) != verased.end()) {
+            std::cerr<<h->id()<<"hid\n"<<h->vertex()->id()<<"idof vertex\n";
             return {{h, "A live halfedge's vertex was erased!"}};
         }
         if(ferased.find(h->face()) != ferased.end()) {

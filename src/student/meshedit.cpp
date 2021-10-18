@@ -133,19 +133,21 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Me
     std::cerr<<vnew->id()<<"vnew\n";
     vnew->pos = e->center();
     // Connect all out going edges from both old vertices to vnew
-    travel = h1->next()->twin()->next();
+    travel = h1->twin()->next();
     while (true) {
+        std::cerr<<travel->id()<<"travelid\n";
         travel->vertex() = vnew;
         travel = travel->twin()->next();
-        if (travel->twin() == h1) {
+        std::cerr<<travel->id()<<"travelafter\n";
+        if (travel == h1) {
             break;
         }
     }
-    travel = ha->next()->twin()->next();
+    travel = ha->twin()->next();
     while (true) {
         travel->vertex() = vnew;
         travel = travel->twin()->next();
-        if (travel->twin() == ha) {
+        if (travel == ha) {
             break;
         }
     }
@@ -172,15 +174,7 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Me
         e2->halfedge() = hc;
         v3->halfedge() = hb;
         travel = v2backup->halfedge();
-        do {
-            travel->vertex() = vnew;
-            travel = travel->twin()->next();
-        } while (travel != v2backup->halfedge());
-        travel = h1->vertex()->halfedge();
-        do {
-            travel->vertex() = vnew;
-            travel = travel->twin()->next();
-        } while (travel != v2backup->halfedge());
+
         erase(f);
         erase(ec);
         std::cerr<<h1->vertex()->id()<<"h1->vertex\n";
@@ -233,15 +227,18 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Me
         hc->set_neighbors(hc->next(), hb, vnew, hb->edge(), hc->face());
         hb->set_neighbors(hb->next(), hc, v3, hb->edge(), hb->face());
         FaceRef f = h1->face();
-        v3->halfedge() = hb;
         e2->halfedge() = hc;
+        v3->halfedge() = hb;
+        travel = v2backup->halfedge();
+
         erase(f);
         erase(ec);
+        std::cerr<<h1->vertex()->id()<<"h1->vertex\n";
         erase(h1->vertex());
         erase(h1);
-        erase(v2);
         erase(h2);
         erase(h3);
+        vnew->halfedge() = hc;
     }
     else {
         // normal
