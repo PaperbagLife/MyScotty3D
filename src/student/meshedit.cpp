@@ -43,7 +43,7 @@ std::optional<Halfedge_Mesh::FaceRef> Halfedge_Mesh::erase_vertex(Halfedge_Mesh:
     FaceRef newf = new_face();
     HalfedgeRef h1 = v->halfedge();
     erase(v);
-    return std::nullopt;
+    return newf;
 }
 
 /*
@@ -113,27 +113,29 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Me
         }
     }
     // Check if all edges on boundary for either
-    HalfedgeRef travel = h1;
+    HalfedgeRef travel = h1->next();
     bool allBoundary = true;
-    do {
+    while(travel != h1) {
         if (!travel->edge()->on_boundary()) {
+            std::cerr<<travel->edge()->id()<<"id\n";
             allBoundary = false;
             break;
         }
         travel = travel->next();
-    } while(travel != h1);
+    } 
     if (allBoundary && !e->on_boundary()) {
         return std::nullopt;
     }
     allBoundary = true;
-    travel = ha;
-    do {
+    travel = ha->next();
+    while(travel != ha) {
         if (!travel->edge()->on_boundary()) {
+            std::cerr<<travel->edge()->id()<<"id\n";
             allBoundary = false;
             break;
         }
         travel = travel->next();
-    } while(travel != ha);
+    }
     if (allBoundary && !e->on_boundary()) {
         return std::nullopt;
     }
