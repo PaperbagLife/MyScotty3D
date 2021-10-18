@@ -103,6 +103,15 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Me
         h1 = h1->twin();
         ha = ha->twin();
     }
+    if (h1->next() == h1->twin()) {
+        return std::nullopt;
+    }
+    if (h1->next()->next()->next() == h1 && ha->next()->next()->next() == ha) {
+        if (h1->next()->edge() == ha->next()->next()->edge() && 
+            h1->next()->next()->edge() == ha->next()->edge()) {
+            return std::nullopt;
+        }
+    }
     // Check if all edges on boundary for either
     HalfedgeRef travel = h1;
     bool allBoundary = true;
@@ -160,6 +169,7 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Me
     // Check if either side is triangle
     if (h1->next()->next()->next() == h1) {
         // triangle, need to replace degen poly with edge
+        std::cerr<<"case1\n";
         HalfedgeRef h2 = h1->next();
         VertexRef v2 = h2->vertex();
         EdgeRef e2 = h2->edge();
@@ -185,6 +195,7 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Me
         vnew->halfedge() = hc;
     }
     else {
+        std::cerr<<"case2\n";
         // Not triangle, normal sequence
         HalfedgeRef h2 = h1->next();
         HalfedgeRef hprev1 = h2;
@@ -200,6 +211,7 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Me
         vnew->halfedge() = h2;
     }
     if (ha->face()->is_boundary()) {
+        std::cerr<<"case3\n";
         boundaryhc->vertex() = vnew;
         HalfedgeRef hpreva = ha->next();
         while (hpreva->next() != ha) {
@@ -214,6 +226,7 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Me
     }
     if (ha->next()->next()->next() == ha) {
         // triangle, replace degen
+        std::cerr<<"case4\n";
         h1 = ha;
         HalfedgeRef h2 = h1->next();
         VertexRef v2 = h2->vertex();
@@ -241,6 +254,7 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Me
     }
     else {
         // normal
+        std::cerr<<"case3\n";
         h1 = ha;
         HalfedgeRef h2 = h1->next();
         HalfedgeRef hprev1 = h2;
