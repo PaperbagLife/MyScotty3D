@@ -149,20 +149,25 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Me
         // triangle, need to replace degen poly with edge
         HalfedgeRef h2 = h1->next();
         VertexRef v2 = h2->vertex();
+        EdgeRef e2 = h2->edge();
         HalfedgeRef hb = h2->twin();
         HalfedgeRef h3 = h2->next();
+        VertexRef v3 = h3->vertex();
         HalfedgeRef hc = h3->twin();
         EdgeRef ec = hc->edge();
         hc->set_neighbors(hc->next(), hb, vnew, hb->edge(), hc->face());
-        hb->set_neighbors(hb->next(), hc, vnew, hb->edge(), hb->face());
+        hb->set_neighbors(hb->next(), hc, v3, hb->edge(), hb->face());
         FaceRef f = h1->face();
+        e2->halfedge() = hc;
+        v3->halfedge() = hb;
         erase(f);
         erase(ec);
         erase(h1->vertex());
         erase(h1);
+        erase(v2);
         erase(h2);
         erase(h3);
-        vnew->halfedge() = hb;
+        vnew->halfedge() = hc;
     }
     else {
         // Not triangle, normal sequence
@@ -184,17 +189,22 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Me
         h1 = ha;
         HalfedgeRef h2 = h1->next();
         VertexRef v2 = h2->vertex();
+        EdgeRef e2 = h2->edge();
         HalfedgeRef hb = h2->twin();
         HalfedgeRef h3 = h2->next();
+        VertexRef v3 = h3->vertex();
         HalfedgeRef hc = h3->twin();
         EdgeRef ec = hc->edge();
         hc->set_neighbors(hc->next(), hb, vnew, hb->edge(), hc->face());
-        hb->set_neighbors(hb->next(), hc, vnew, hb->edge(), hb->face());
+        hb->set_neighbors(hb->next(), hc, v3, hb->edge(), hb->face());
         FaceRef f = h1->face();
+        v3->halfedge() = hb;
+        e2->halfedge() = hc;
         erase(f);
         erase(ec);
         erase(h1->vertex());
         erase(h1);
+        erase(v2);
         erase(h2);
         erase(h3);
     }
