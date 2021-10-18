@@ -177,10 +177,8 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Me
 
         erase(f);
         erase(ec);
-        std::cerr<<h1->vertex()->id()<<"h1->vertex\n";
         erase(h1->vertex());
         erase(h1);
-        std::cerr<<v2backup->id()<<"v2\n";
         erase(v2backup);
         erase(h2);
         erase(h3);
@@ -208,6 +206,7 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Me
             hpreva = hpreva->next();
         }
         hpreva->next() = ha->next();
+        ha->face()->halfedge() = ha->next();
         erase(ha);
         erase(e);
         
