@@ -21,3 +21,5 @@ media/env_maps/
 media/test/
 .vscode/msvc/launch.json
 .gitignore
+handin.tgz
+src/geometry/halfedge.cpp

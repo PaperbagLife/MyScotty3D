@@ -9,3 +9,5 @@ EdgeSplit: Fully implemented
 FaceBevel: Fully implemented
 
 EdgeErase: Fully implemented
+
+VertexErase: Fully implemented

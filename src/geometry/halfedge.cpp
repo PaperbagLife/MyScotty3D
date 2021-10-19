@@ -472,8 +472,8 @@ std::optional<std::pair<Halfedge_Mesh::ElementRef, std::string>> Halfedge_Mesh::
         if(herased.find(h) != herased.end()) {
             return {{f, "A face's halfedge is erased!"}};
         }
-
         do {
+            std::cerr<<f->id()<<"fid\n";
             if(h->face() != f) {
                 return {{h, "A face's halfedge does not point to that face!"}};
             }
