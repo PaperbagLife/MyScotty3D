@@ -76,7 +76,7 @@ std::optional<Halfedge_Mesh::FaceRef> Halfedge_Mesh::erase_vertex(Halfedge_Mesh:
         std::cerr<<hdel->id()<<"herased\n";
         erase(hdel);
     }
-    for (int i = 0; i < ring.size(); i++) {
+    for (unsigned int i = 0; i < ring.size(); i++) {
         HalfedgeRef hcur = ring[i];
         HalfedgeRef hnext = ring[(i+1)%ring.size()];
         hcur->face() = newf;
@@ -209,7 +209,6 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Me
         // triangle, need to replace degen poly with edge
         std::cerr<<"case1\n";
         HalfedgeRef h2 = h1->next();
-        VertexRef v2 = h2->vertex();
         EdgeRef e2 = h2->edge();
         HalfedgeRef hb = h2->twin();
         HalfedgeRef h3 = h2->next();
@@ -267,7 +266,6 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Me
         // triangle, replace degen
         h1 = ha;
         HalfedgeRef h2 = h1->next();
-        VertexRef v2 = h2->vertex();
         EdgeRef e2 = h2->edge();
         HalfedgeRef hb = h2->twin();
         HalfedgeRef h3 = h2->next();
