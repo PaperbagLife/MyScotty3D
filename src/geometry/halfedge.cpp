@@ -387,11 +387,9 @@ std::optional<std::pair<Halfedge_Mesh::ElementRef, std::string>> Halfedge_Mesh::
             return {{h, "A live halfedge's next was erased!"}};
         }
         if(herased.find(h->twin()) != herased.end()) {
-            std::cerr<<h->id()<<"hid\n"<<h->twin()->id()<<"idoftwin\n";
             return {{h, "A live halfedge's twin was erased!"}};
         }
         if(verased.find(h->vertex()) != verased.end()) {
-            std::cerr<<h->id()<<"hid\n"<<h->vertex()->id()<<"idof vertex\n";
             return {{h, "A live halfedge's vertex was erased!"}};
         }
         if(ferased.find(h->face()) != ferased.end()) {
@@ -473,8 +471,8 @@ std::optional<std::pair<Halfedge_Mesh::ElementRef, std::string>> Halfedge_Mesh::
             return {{f, "A face's halfedge is erased!"}};
         }
         do {
-            std::cerr<<f->id()<<"fid\n";
             if(h->face() != f) {
+                std::cerr<<f->id()<<"fid\n";
                 return {{h, "A face's halfedge does not point to that face!"}};
             }
             h = h->next();

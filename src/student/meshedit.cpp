@@ -58,7 +58,6 @@ std::optional<Halfedge_Mesh::FaceRef> Halfedge_Mesh::erase_vertex(Halfedge_Mesh:
         unsigned int deg = f->degree();
         h2erase.push_back(cur);
         cur = cur->next(); // first edge
-        std::cerr<<cur->twin()->face()->id()<<"f48??\n";
         for (unsigned int j = 0; j < deg-2; j++) {
             ring.push_back(cur);
             cur = cur->next();
@@ -73,7 +72,6 @@ std::optional<Halfedge_Mesh::FaceRef> Halfedge_Mesh::erase_vertex(Halfedge_Mesh:
     }
     for (unsigned int i = 0; i < h2erase.size(); i++) {
         HalfedgeRef hdel = h2erase[i];
-        std::cerr<<hdel->id()<<"herased\n";
         erase(hdel);
     }
     for (unsigned int i = 0; i < ring.size(); i++) {
@@ -98,6 +96,9 @@ std::optional<Halfedge_Mesh::FaceRef> Halfedge_Mesh::erase_edge(Halfedge_Mesh::E
     }
     HalfedgeRef h1 = e->halfedge();
     HalfedgeRef ha = h1->twin();
+    if (h1->face() == ha->face()) {
+        return std::nullopt;
+    } 
     HalfedgeRef h1next = h1->next();
     HalfedgeRef h1prev = h1->next();
     while (h1prev->next() != h1) {
@@ -207,7 +208,6 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Me
     // Check if either side is triangle
     if (h1->next()->next()->next() == h1) {
         // triangle, need to replace degen poly with edge
-        std::cerr<<"case1\n";
         HalfedgeRef h2 = h1->next();
         EdgeRef e2 = h2->edge();
         HalfedgeRef hb = h2->twin();
@@ -233,7 +233,6 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Me
     }
     else {
         // Not triangle, normal sequence
-        std::cerr<<"case2\n";
         HalfedgeRef h2 = h1->next();
         HalfedgeRef hprev1 = h2;
         FaceRef f = h1->face();
@@ -248,7 +247,6 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Me
         vnew->halfedge() = h2;
     }
     if (ha->face()->is_boundary()) {
-        std::cerr<<"case3\n";
         boundaryhc->vertex() = vnew;
         HalfedgeRef hpreva = ha->next();
         while (hpreva->next() != ha) {
@@ -262,7 +260,6 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Me
         return vnew;
     }
     if (ha->next()->next()->next() == ha) {
-        std::cerr<<"case4\n";
         // triangle, replace degen
         h1 = ha;
         HalfedgeRef h2 = h1->next();
@@ -289,7 +286,6 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Me
     }
     else {
         // normal
-        std::cerr<<"case5\n";
         h1 = ha;
         HalfedgeRef h2 = h1->next();
         HalfedgeRef hprev1 = h2;
@@ -596,7 +592,6 @@ std::optional<Halfedge_Mesh::FaceRef> Halfedge_Mesh::bevel_face(Halfedge_Mesh::F
     HalfedgeRef prevhiright = new_halfedge();
     HalfedgeRef hnright = prevhiright;
     FaceRef fnew = new_face();
-    std::cerr<<fnew->id()<<"fnewid\n";
     HalfedgeRef hitoptwin = new_halfedge();
     HalfedgeRef firsthitoptwin = hitoptwin;
     HalfedgeRef hinexttoptwin;
@@ -610,7 +605,6 @@ std::optional<Halfedge_Mesh::FaceRef> Halfedge_Mesh::bevel_face(Halfedge_Mesh::F
         // Keep track of eright, which is edge of next hileft
         // hitop is halfedge of etop.
         FaceRef fi = new_face();
-        std::cerr<<fi->id()<<"fiid\n";
         EdgeRef etop = new_edge();
         EdgeRef eright = new_edge();
         VertexRef vtopright = new_vertex();
@@ -653,7 +647,6 @@ std::optional<Halfedge_Mesh::FaceRef> Halfedge_Mesh::bevel_face(Halfedge_Mesh::F
     }
     // Last face for the ring
     FaceRef fn = new_face();
-    std::cerr<<fn->id()<<"fnid\n";
     // 2 additional halfedge
     HalfedgeRef hntop = new_halfedge();
     HalfedgeRef hnleft = new_halfedge();
@@ -801,6 +794,74 @@ void Halfedge_Mesh::bevel_face_positions(const std::vector<Vec3>& start_position
 void Halfedge_Mesh::triangulate() {
 
     // For each face...
+    FaceRef f;
+    std::vector<FaceRef> all_faces;
+    for (f = faces.begin(); f != faces.end(); f++) {
+        if(ferased.find(f) != ferased.end()) continue;
+        if(f->is_boundary()) continue;
+        all_faces.push_back(f);
+    }
+
+    for (unsigned int i = 0; i < all_faces.size(); i++) {
+        f = all_faces[i];
+        std::cerr<<f->id()<<"fid in for loop\n";
+        unsigned int deg = f->degree();
+        if (deg <= 3) {
+            continue;
+        }
+        // Face deg larger than 3f
+        // First triangle, keeping face
+        HalfedgeRef hleft = f->halfedge();
+        HalfedgeRef h1 = hleft;
+        VertexRef v1 = hleft->vertex();
+        HalfedgeRef hbase = hleft->next();
+        HalfedgeRef hbasenext = hbase->next();
+        HalfedgeRef hright = new_halfedge();
+        EdgeRef eright = new_edge();
+        eright->halfedge() = hright;
+        hbase->next() = hright;
+        hright->set_neighbors(hleft, hright, hbasenext->vertex(), eright, f);
+        hbase = hbasenext;
+        hbasenext = hbase->next();
+        HalfedgeRef prevhright = hright;
+        EdgeRef preveright = eright;
+        // Note hright twin is itself, set that in the next iter.
+        for (unsigned int j = 1; j < deg - 3; j++) {
+            std::cerr<<"making new face in loop\n";
+            // Make new face, new right edge, new left halfedge
+            FaceRef newf = new_face();
+            eright = new_edge();
+            hleft = new_halfedge();
+            hright = new_halfedge();
+            // save the next base
+            hleft->set_neighbors(hbase, prevhright, v1, preveright, newf);
+            prevhright->twin() = hleft;
+            hright->set_neighbors(hleft, hright, hbasenext->vertex(), eright, newf);
+            eright->halfedge() = hright;
+            hbase->next() = hright;
+            hbase->face() = newf;
+            newf->halfedge() = hleft;
+            // setup next loop
+            preveright = eright;
+            prevhright = hright;
+            hbase = hbasenext;
+            hbasenext = hbase->next();
+        }
+        // Last triangle
+        FaceRef newf = new_face();
+        hleft = new_halfedge();
+        eright = hbasenext->edge();
+        assert(hbasenext->next() == h1);
+        hright = hbasenext;
+        // reassign
+        hleft->set_neighbors(hbase, prevhright, v1, preveright, newf);
+        prevhright->twin() = hleft;
+        hright->next() = hleft;
+        hbase->face() = newf;
+        hright->face() = newf;
+        newf->halfedge() = hleft;
+    }
+    return;
 }
 
 /* Note on the quad subdivision process:
