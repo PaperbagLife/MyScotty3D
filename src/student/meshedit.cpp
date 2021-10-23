@@ -796,7 +796,7 @@ void Halfedge_Mesh::triangulate() {
     // For each face...
     FaceRef f;
     std::vector<FaceRef> all_faces;
-    for (f = faces.begin(); f != faces.end(); f++) {
+    for (f = faces_begin(); f != faces_end(); f++) {
         if(ferased.find(f) != ferased.end()) continue;
         if(f->is_boundary()) continue;
         all_faces.push_back(f);
@@ -937,7 +937,7 @@ void Halfedge_Mesh::linear_subdivide_positions() {
     // For each face, assign the centroid (i.e., arithmetic mean)
     // of the original vertex positions to Face::new_pos. Note
     // that in general, NOT all faces will be triangles!
-    for(FaceRef f = faces.begin(); f != faces.end(); f++) {
+    for(FaceRef f = faces_begin(); f != faces_end(); f++) {
         f->new_pos = f->center();
     }
 
@@ -962,10 +962,35 @@ void Halfedge_Mesh::catmullclark_subdivide_positions() {
     // rules. (These rules are outlined in the Developer Manual.)
 
     // Faces
+    for(FaceRef f = faces_begin(); f != faces_end(); f++) {
+        f->new_pos = f->center();
+    }
 
     // Edges
+    for(EdgeRef e = edges_begin(); e != edges_end(); e++) {
+        HalfedgeRef h1 = e->halfedge();
+        HalfedgeRef ha = h1->twin();
+        Vec3 mid = (h1->face()->new_pos + ha->face()->new_pos)/2;
+        e->new_pos = e->center()/2 + mid/2;
+    }
 
     // Vertices
+    for(VertexRef v = vertices_begin(); v != vertices_end(); v++) {
+        Vec3 Q = Vec3();
+        Vec3 R = Vec3();
+        HalfedgeRef travel = v->halfedge();
+        float deg = (float)v->degree();
+        for(float i = 0.0f; i < deg; i += 1.0f) {
+            FaceRef curf = travel->face();
+            EdgeRef cure = travel->edge();
+            Q += curf->new_pos/deg;
+            R += cure->center()/deg;
+            travel = travel->twin()->next();
+        }
+        Vec3 pos = Q/deg + 2.0f*R/deg + ((deg-3)/deg)*v->pos;
+        v->new_pos = pos;
+    }
+
 }
 
 /*
