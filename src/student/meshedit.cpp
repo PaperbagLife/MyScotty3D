@@ -462,6 +462,10 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::split_edge(Halfedge_Mesh:
     EdgeRef enewdown = new_edge();
     EdgeRef enewleft = new_edge();
     EdgeRef enewright = new_edge();
+    enewdown->is_new = false;
+    enewleft->is_new = true;
+    enewright->is_new = true;
+    e->is_new = false;
     HalfedgeRef h32 = new_halfedge();
     HalfedgeRef h22 = new_halfedge();
     HalfedgeRef h12 = new_halfedge();
@@ -804,7 +808,6 @@ void Halfedge_Mesh::triangulate() {
 
     for (unsigned int i = 0; i < all_faces.size(); i++) {
         f = all_faces[i];
-        std::cerr<<f->id()<<"fid in for loop\n";
         unsigned int deg = f->degree();
         if (deg <= 3) {
             continue;
@@ -827,7 +830,6 @@ void Halfedge_Mesh::triangulate() {
         EdgeRef preveright = eright;
         // Note hright twin is itself, set that in the next iter.
         for (unsigned int j = 1; j < deg - 3; j++) {
-            std::cerr<<"making new face in loop\n";
             // Make new face, new right edge, new left halfedge
             FaceRef newf = new_face();
             eright = new_edge();
@@ -976,8 +978,8 @@ void Halfedge_Mesh::catmullclark_subdivide_positions() {
 
     // Vertices
     for(VertexRef v = vertices_begin(); v != vertices_end(); v++) {
-        Vec3 Q = Vec3();
-        Vec3 R = Vec3();
+        Vec3 Q;
+        Vec3 R;
         HalfedgeRef travel = v->halfedge();
         float deg = (float)v->degree();
         for(float i = 0.0f; i < deg; i += 1.0f) {
@@ -1013,9 +1015,40 @@ void Halfedge_Mesh::loop_subdivide() {
     // the Loop subdivision rule and store them in Vertex::new_pos.
     //    At this point, we also want to mark each vertex as being a vertex of the
     //    original mesh. Use Vertex::is_new for this.
-    
+
+    for(VertexRef v = vertices_begin(); v != vertices_end(); v++) {
+        v->is_new = false;
+        float deg = (float)v->degree();
+        Vec3 avg;
+        HalfedgeRef travel = v->halfedge();
+        float u;
+        if(int(deg) == 3) {
+            u = 3.0f/16.0f;
+        }
+        else {
+            u = 3.0f/(8.0f*deg);
+        }
+        for(float i = 0.0f; i < deg; i += 1.0f) {
+            VertexRef neigh = travel->twin()->vertex();
+            avg += neigh->pos * u;
+            travel = travel->twin()->next();
+        }
+        avg += (1.0f - deg*u) * v->pos;
+        v->new_pos = avg;
+    }
     // Next, compute the subdivided vertex positions associated with edges, and
     // store them in Edge::new_pos.
+    for(EdgeRef e = edges_begin(); e != edges_end(); e++) {
+        Vec3 pos;
+        HalfedgeRef h1 = e->halfedge();
+        HalfedgeRef ha = h1->twin();
+        Vec3 A = h1->vertex()->pos;
+        Vec3 B = ha->vertex()->pos;
+        Vec3 C = h1->next()->next()->vertex()->pos;
+        Vec3 D = ha->next()->next()->vertex()->pos;
+        pos = 3.0f*(A+B)/8.0f + (C+D)/8.0f;
+        e->new_pos = pos;
+    }
     
     // Next, we're going to split every edge in the mesh, in any order.
     // We're also going to distinguish subdivided edges that came from splitting 
@@ -1023,10 +1056,40 @@ void Halfedge_Mesh::loop_subdivide() {
     // Note that in this loop, we only want to iterate over edges of the original mesh.
     // Otherwise, we'll end up splitting edges that we just split (and the
     // loop will never end!)
+    for (EdgeRef e = edges_begin(); e != edges_end(); e++) {
+        e->is_new = false;
+    }
+    
+    size_t n = n_edges();
+    EdgeRef e = edges_begin();
+    EdgeRef nextEdge = e;
+    for (size_t i = 0; i < n; i++) {
+        nextEdge++;
+        if (e->is_new == false) {
+            VertexRef vnew = split_edge(e).value();
+            vnew->is_new = true;
+            vnew->pos = e->new_pos;
+        }
+        e = nextEdge;
+    }
     
     // Now flip any new edge that connects an old and new vertex.
-    
+    for (e = edges_begin(); e != edges_end(); e++) {
+        if (e->is_new) {
+            HalfedgeRef h1 = e->halfedge();
+            HalfedgeRef ha = h1->twin();
+            if (h1->vertex()->is_new != ha->vertex()->is_new) {
+                flip_edge(e);
+            }
+        }
+    }
     // Finally, copy new vertex positions into the Vertex::pos.
+    for (VertexRef v = vertices_begin(); v != vertices_end(); v++) {
+        if (!v->is_new) {
+            v->pos = v->new_pos;
+        }
+        
+    }
 }
 
 /*
