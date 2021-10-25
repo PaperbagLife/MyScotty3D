@@ -11,3 +11,9 @@ FaceBevel: Fully implemented
 EdgeErase: Fully implemented
 
 VertexErase: Fully implemented
+
+Triangulation: Fully implemented
+
+LinearSubdivision: Fully implemented
+
+CatmullClarkSubdivision: Fully implemented
