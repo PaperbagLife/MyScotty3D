@@ -12,7 +12,7 @@ Ray Camera::generate_ray(Vec2 screen_coord) const {
     // Tip: compute the ray direction in view space and use
     // the camera transform to transform it back into world space.
     screen_coord = screen_coord * 2 - Vec2(1.0f, 1.0f);
-    float h = std::tan(vert_fov/2);
+    float h = 2 * std::tan(Radians(vert_fov/2));
     float w = h * aspect_ratio;
     Vec3 cam2plane;
     cam2plane.z = -1;
