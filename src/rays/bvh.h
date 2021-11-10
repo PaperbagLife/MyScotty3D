@@ -14,7 +14,7 @@ size_t compute_bucket(BBox box, Vec3 center, int axis) {
     size_t idx = (size_t)(pos * (float)PARTS);
     return std::min<size_t>(idx, PARTS-1);
 }
-void find_closest_hit(const Ray ray, size_t curIdx, Vec2& range) const {
+Trace find_closest_hit(const Ray ray, size_t curIdx, Vec2& range) const {
     Node curNode = nodes[curIdx];
     Trace ret;
     if (curNode.is_leaf()) {
@@ -22,6 +22,7 @@ void find_closest_hit(const Ray ray, size_t curIdx, Vec2& range) const {
             Trace hit = primitives[curNode.start+i].hit(ray);
             ret = Trace::min(ret, hit);
         }
+        return ret;
     }
     else {
         Node lchild = nodes[curNode.l];
@@ -37,25 +38,30 @@ void find_closest_hit(const Ray ray, size_t curIdx, Vec2& range) const {
             // check range
             if (rangeL.x <= rangeR.x) {
                 // left first
-                find_closest_hit(ray, curNode.l, rangeL);
-                if(rangeL.x > rangeR.x) {
-                    find_closest_hit(ray, curNode.r, rangeR);
+                Trace leftRet = find_closest_hit(ray, curNode.l, rangeL);
+                if(leftRet.distance > rangeR.x || !leftRet.hit) {
+                    Trace rightRet = find_closest_hit(ray, curNode.r, rangeR);
+                    return Trace::min(leftRet, rightRet);
                 }
+                return leftRet;
             }
             else {
                 // right first
-                find_closest_hit(ray, curNode.r, rangeR);
-                if(ret.distance > rangeL.x) {
-                    find_closest_hit(ray, curNode.l, rangeL);
+                Trace rightRet = find_closest_hit(ray, curNode.r, rangeR);
+                if(rightRet.distance > rangeL.x || !rightRet.hit) {
+                    Trace leftRet = find_closest_hit(ray, curNode.l, rangeL);
+                    return Trace::min(leftRet, rightRet);
                 }
+                return rightRet;
             }
         }
         else if (leftHit) {
-            find_closest_hit(ray, curNode.l, rangeL);
+            return find_closest_hit(ray, curNode.l, rangeL);
         }
         else if (rightHit) {
-            find_closest_hit(ray, curNode.r, rangeR);
+            return find_closest_hit(ray, curNode.r, rangeR);
         }
+        return ret;
     }
 }
 public:

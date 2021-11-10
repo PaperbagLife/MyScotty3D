@@ -35,7 +35,7 @@ bool BBox::hit(const Ray& ray, Vec2& times) const {
     }
     float tmin = t0x;
     float tmax = t1x;
-    if ((tmin > t1y) || (t0x > tmax)) return false;
+    if ((tmin > t1y) || (t0y > tmax)) return false;
     if (t0y > tmin) tmin = t0y;
     if (t1y < tmax) tmax = t1y;
     if ((tmin > t1x) || (t0x > tmax)) return false;
@@ -44,6 +44,7 @@ bool BBox::hit(const Ray& ray, Vec2& times) const {
     if (tmin > times.y || tmax < times.x) {
         return false;
     }
+    if (tmin < ray.dist_bounds.x || tmax > ray.dist_bounds.y) return false;
     if (tmin > times.x) times.x = tmin;
     if (tmax < times.y) times.y = tmax;
 

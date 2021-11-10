@@ -152,7 +152,10 @@ template<typename Primitive> Trace BVH<Primitive>::hit(const Ray& ray) const {
     range.y = FLT_MAX;
     if (nodes[root_idx].bbox.hit(ray, range)) {
         // iterate until leaf
-        find_closest_hit(ray, root_idx, range);
+        ret = find_closest_hit(ray, root_idx, range);
+    }
+    if (ret.hit) {
+        std::cerr<<"HIT\n";
     }
     return ret;
 }
