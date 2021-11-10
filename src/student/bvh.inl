@@ -147,9 +147,12 @@ template<typename Primitive> Trace BVH<Primitive>::hit(const Ray& ray) const {
     // Again, remember you can use hit() on any Primitive value.
 
     Trace ret;
-    for(const Primitive& prim : primitives) {
-        Trace hit = prim.hit(ray);
-        ret = Trace::min(ret, hit);
+    Vec2 range;
+    range.x = 0.0f;
+    range.y = FLT_MAX;
+    if (nodes[root_idx].bbox.hit(ray, range)) {
+        // iterate until leaf
+        find_closest_hit(ray, root_idx, range);
     }
     return ret;
 }

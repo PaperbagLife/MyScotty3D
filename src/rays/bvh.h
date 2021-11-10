@@ -14,6 +14,50 @@ size_t compute_bucket(BBox box, Vec3 center, int axis) {
     size_t idx = (size_t)(pos * (float)PARTS);
     return std::min<size_t>(idx, PARTS-1);
 }
+void find_closest_hit(const Ray ray, size_t curIdx, Vec2& range) const {
+    Node curNode = nodes[curIdx];
+    Trace ret;
+    if (curNode.is_leaf()) {
+        for (size_t i = 0; i < curNode.size; i++) {
+            Trace hit = primitives[curNode.start+i].hit(ray);
+            ret = Trace::min(ret, hit);
+        }
+    }
+    else {
+        Node lchild = nodes[curNode.l];
+        Node rchild = nodes[curNode.r];
+        Vec2 rangeL, rangeR;
+        rangeL.x = range.x;
+        rangeL.y = range.y;
+        rangeR.x = range.x;
+        rangeR.y = range.y;
+        bool leftHit = lchild.bbox.hit(ray, rangeL);
+        bool rightHit = rchild.bbox.hit(ray, rangeR);
+        if (leftHit && rightHit) {
+            // check range
+            if (rangeL.x <= rangeR.x) {
+                // left first
+                find_closest_hit(ray, curNode.l, rangeL);
+                if(rangeL.x > rangeR.x) {
+                    find_closest_hit(ray, curNode.r, rangeR);
+                }
+            }
+            else {
+                // right first
+                find_closest_hit(ray, curNode.r, rangeR);
+                if(ret.distance > rangeL.x) {
+                    find_closest_hit(ray, curNode.l, rangeL);
+                }
+            }
+        }
+        else if (leftHit) {
+            find_closest_hit(ray, curNode.l, rangeL);
+        }
+        else if (rightHit) {
+            find_closest_hit(ray, curNode.r, rangeR);
+        }
+    }
+}
 public:
     BVH() = default;
     BVH(std::vector<Primitive>&& primitives, size_t max_leaf_size = 1);

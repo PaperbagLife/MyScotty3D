@@ -1,6 +1,7 @@
 
 #include "../lib/mathlib.h"
 #include "debug.h"
+#include <iostream>
 
 bool BBox::hit(const Ray& ray, Vec2& times) const {
 
