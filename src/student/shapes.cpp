@@ -32,21 +32,23 @@ Trace Sphere::hit(const Ray& ray) const {
     float od = dot(o, d);
     float t1 = -od + sqrt(od*od - o.norm_squared() + r2);
     float t2 = -od - sqrt(od*od - o.norm_squared() + r2);
-    if (t1 > ray.dist_bounds.x && t1 < ray.dist_bounds.y) {
+    if (t1 >= ray.dist_bounds.x && t1 <= ray.dist_bounds.y) {
         // can intersect
         ray.dist_bounds.x = t1;
         ret.hit = true;
-        ret.position = o + t1*d;
-        ret.distance = (t1*d).norm();
+        ret.position = ray.at(t1);
+        ray.dist_bounds.y = t1;
+        ret.distance = t1;
         ret.normal = ret.position.unit();
         return ret;
     }
-    if (t2 > ray.dist_bounds.x && t2 < ray.dist_bounds.y) {
+    if (t2 >= ray.dist_bounds.x && t2 <= ray.dist_bounds.y) {
         // can intersect
         ray.dist_bounds.x = t2;
         ret.hit = true;
-        ret.position = o + t2*d;
-        ret.distance = (t2*d).norm();
+        ret.position = ray.at(t2);
+        ret.distance = t2;
+        ray.dist_bounds.y = t2;
         ret.normal = ret.position.unit();
         return ret;
     }

@@ -7,8 +7,13 @@
 #include "trace.h"
 
 namespace PT {
-
+#define PARTS 32
 template<typename Primitive> class BVH {
+size_t compute_bucket(BBox box, Vec3 center, int axis) {
+    float pos = (center[axis] - box.min[axis])/(box.max[axis] - box.min[axis]);
+    size_t idx = (size_t)(pos * (float)PARTS);
+    return std::min<size_t>(idx, PARTS-1);
+}
 public:
     BVH() = default;
     BVH(std::vector<Primitive>&& primitives, size_t max_leaf_size = 1);
