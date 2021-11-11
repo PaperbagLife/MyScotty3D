@@ -28,10 +28,8 @@ Trace find_closest_hit(const Ray ray, size_t curIdx, Vec2& range) const {
         Node lchild = nodes[curNode.l];
         Node rchild = nodes[curNode.r];
         Vec2 rangeL, rangeR;
-        rangeL.x = range.x;
-        rangeL.y = range.y;
-        rangeR.x = range.x;
-        rangeR.y = range.y;
+        rangeL = range;
+        rangeR = range;
         bool leftHit = lchild.bbox.hit(ray, rangeL);
         bool rightHit = rchild.bbox.hit(ray, rangeR);
         if (leftHit && rightHit) {

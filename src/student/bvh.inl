@@ -48,8 +48,7 @@ void BVH<Primitive>::build(std::vector<Primitive>&& prims, size_t max_leaf_size)
     BBox box;
     for(const Primitive& prim : primitives) box.enclose(prim.bbox());
 
-    new_node(box, 0, primitives.size(), 0, 0);
-    root_idx = 0;
+    root_idx = new_node(box, 0, primitives.size(), 0, 0);
     S.push(root_idx);
     
     while (!S.empty()) {
@@ -95,7 +94,7 @@ void BVH<Primitive>::build(std::vector<Primitive>&& prims, size_t max_leaf_size)
                     BCount += buckets.at(j).prim_count;
                 }
                 float SAH = (float)ACount*boxA.surface_area() + (float)BCount*boxB.surface_area();
-                if (SAH <= minSAH) {
+                if (SAH < minSAH) {
                     // save some info
                     minSAH = SAH;
                     part1.clear();
@@ -131,6 +130,7 @@ void BVH<Primitive>::build(std::vector<Primitive>&& prims, size_t max_leaf_size)
         size_t rchild = new_node(boxB, pstart+ACount, BCount, 0, 0);
         nodes[curIdx].l = lchild;
         nodes[curIdx].r = rchild;
+        std::cerr<<curIdx<<","<<lchild<<","<<rchild<<"\n";
         S.push(lchild);
         S.push(rchild);
     }
