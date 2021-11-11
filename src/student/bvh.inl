@@ -41,7 +41,6 @@ void BVH<Primitive>::build(std::vector<Primitive>&& prims, size_t max_leaf_size)
         BBox bbox;
         size_t prim_count;
         float total_area;
-        std::vector<size_t> primIdxs;
     } Bucket;
     // Replace these
     std::stack<size_t> S;
@@ -61,8 +60,12 @@ void BVH<Primitive>::build(std::vector<Primitive>&& prims, size_t max_leaf_size)
             continue;
         }
         std::vector<Bucket> buckets(PARTS);
-        std::vector<size_t> part1;
-        std::vector<size_t> part2;
+        BBox minBoxA;
+        BBox minBoxB;
+        int minAxis = 0;
+        size_t minACount = 0;
+        size_t minBCount = 0;
+        int minCut = 0;
         BBox curBox = curNode.bbox;
         float minSAH = FLT_MAX;
         for(int axis = 0; axis < 3; axis++) {
@@ -70,7 +73,6 @@ void BVH<Primitive>::build(std::vector<Primitive>&& prims, size_t max_leaf_size)
                 buckets[i].bbox.reset();
                 buckets[i].prim_count = 0;
                 buckets[i].total_area = 0.0f;
-                buckets[i].primIdxs.clear();
             }
             for(size_t i = pstart; i < pend; i++) {
                 Primitive& prim = primitives.at(i);
@@ -78,7 +80,6 @@ void BVH<Primitive>::build(std::vector<Primitive>&& prims, size_t max_leaf_size)
                 Bucket& B = buckets.at(bid);
                 B.bbox.enclose(prim.bbox());
                 B.prim_count++;
-                B.primIdxs.push_back(i);
             }
             for (size_t i = 1; i < PARTS; i++) {
                 BBox boxA = BBox();
@@ -97,40 +98,29 @@ void BVH<Primitive>::build(std::vector<Primitive>&& prims, size_t max_leaf_size)
                 if (SAH < minSAH) {
                     // save some info
                     minSAH = SAH;
-                    part1.clear();
-                    part2.clear();
-                    for (size_t j = 0; j < i; j++) {
-                        std::vector<size_t> curPrimIdxs = buckets[j].primIdxs;
-                        for (size_t idx : curPrimIdxs) {
-                            part1.push_back(idx);
-                        }
-                    }
-                    for (size_t j = i; j < PARTS; j++) {
-                        std::vector<size_t> curPrimIdxs = buckets[j].primIdxs;
-                        for (size_t idx : curPrimIdxs) {
-                            part2.push_back(idx);
-                        }
-                    }
+                    minBoxA = boxA;
+                    minBoxB = boxB;
+                    minBCount = BCount;
+                    minACount = ACount;
+                    minCut = (int)i;
+                    minAxis = axis;
                 }
             }
         }
-        BBox boxA;
-        BBox boxB;
-        size_t ACount = part1.size();
-        size_t BCount = part2.size();
-        for (size_t idx : part1) {
-            Primitive& prim = primitives.at(idx);
-            boxA.enclose(prim.bbox());
-        }
-        for (size_t idx : part2) {
-            Primitive& prim = primitives.at(idx);
-            boxB.enclose(prim.bbox());
-        }
+        BBox boxA = minBoxA;
+        BBox boxB = minBoxB;
+        size_t ACount = minACount;
+        size_t BCount = minBCount;
+        auto part = [curBox, minAxis, minCut](Primitive& prim){
+            float pos = (prim.bbox().center()[minAxis] - curBox.min[minAxis])/(curBox.max[minAxis] - curBox.min[minAxis]);
+            size_t idx = (size_t)(pos * (float)PARTS);
+            return idx < minCut;
+        };
+        std::partition(primitives.begin() + pstart, primitives.begin() + pend, part);
         size_t lchild = new_node(boxA, pstart, ACount, 0, 0);
         size_t rchild = new_node(boxB, pstart+ACount, BCount, 0, 0);
         nodes[curIdx].l = lchild;
         nodes[curIdx].r = rchild;
-        std::cerr<<curIdx<<","<<lchild<<","<<rchild<<"\n";
         S.push(lchild);
         S.push(rchild);
     }
