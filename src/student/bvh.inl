@@ -113,7 +113,7 @@ void BVH<Primitive>::build(std::vector<Primitive>&& prims, size_t max_leaf_size)
         size_t BCount = minBCount;
         auto part = [curBox, minAxis, minCut](Primitive& prim){
             float pos = (prim.bbox().center()[minAxis] - curBox.min[minAxis])/(curBox.max[minAxis] - curBox.min[minAxis]);
-            size_t idx = (size_t)(pos * (float)PARTS);
+            int idx = (size_t)(pos * (float)PARTS);
             return idx < minCut;
         };
         std::partition(primitives.begin() + pstart, primitives.begin() + pend, part);
