@@ -53,7 +53,7 @@ Spectrum Pathtracer::sample_indirect_lighting(const Shading_Info& hit) {
     // by Pathtracer::trace()), as the direct component will be computed in
     // Pathtracer::sample_direct_lighting().
     Scatter scatter = hit.bsdf.scatter(hit.out_dir);
-    Ray ray = Ray(hit.pos, hit.out_dir, Vec2{EPS_F, FLT_MAX}, hit.depth-1);
+    Ray ray = Ray(hit.pos, hit.object_to_world.rotate(scatter.direction), Vec2{EPS_F, FLT_MAX}, hit.depth-1);
     auto [emissive, reflected] = trace(ray);
     if (!hit.bsdf.is_discrete()) {
         reflected = reflected / hit.bsdf.pdf(hit.out_dir, scatter.direction);
@@ -80,7 +80,7 @@ Spectrum Pathtracer::sample_direct_lighting(const Shading_Info& hit) {
     // incoming light (the first value returned by Pathtracer::trace()). Note that since we only
     // want emissive, we can trace a ray with depth = 0.
     Scatter scatter = hit.bsdf.scatter(hit.out_dir);
-    Ray ray = Ray(hit.pos, hit.out_dir, Vec2{EPS_F, FLT_MAX}, 0);
+    Ray ray = Ray(hit.pos, hit.object_to_world.rotate(scatter.direction), Vec2{EPS_F, FLT_MAX}, 0);
     auto [emissive, reflected] = trace(ray);
     if (!hit.bsdf.is_discrete()) {
         emissive = emissive / hit.bsdf.pdf(hit.out_dir, scatter.direction);
