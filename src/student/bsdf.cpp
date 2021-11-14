@@ -54,10 +54,10 @@ Spectrum BSDF_Lambertian::evaluate(Vec3 out_dir, Vec3 in_dir) const {
 
 float BSDF_Lambertian::pdf(Vec3 out_dir, Vec3 in_dir) const {
 
-    // TODO (PathTracer): Task 4
+    // TODO (PathTracer): Task 4 
 
     // Compute the PDF for sampling in_dir from the cosine-weighted hemisphere distribution.
-    return in_dir.unit().y/PI_F;
+    return std::max<float>(0.0f, in_dir.unit().y/PI_F);
 }
 
 Scatter BSDF_Mirror::scatter(Vec3 out_dir) const {

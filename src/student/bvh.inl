@@ -144,9 +144,6 @@ template<typename Primitive> Trace BVH<Primitive>::hit(const Ray& ray) const {
         // iterate until leaf
         ret = find_closest_hit(ray, root_idx, range);
     }
-    if (ret.hit) {
-        std::cerr<<"HIT\n";
-    }
     return ret;
 }
 
