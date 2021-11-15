@@ -78,15 +78,16 @@ Spectrum Pathtracer::sample_direct_lighting(const Shading_Info& hit) {
     // Pathtracer::sample_indirect_lighting(), but instead accumulates the emissive component of
     // incoming light (the first value returned by Pathtracer::trace()). Note that since we only
     // want emissive, we can trace a ray with depth = 0.
-    Scatter scatter = hit.bsdf.scatter(hit.out_dir);
-    Ray ray = Ray(hit.pos, hit.object_to_world.rotate(scatter.direction), Vec2{EPS_F, FLT_MAX}, 0);
-    auto [emissive, reflected] = trace(ray);
-    if (!hit.bsdf.is_discrete()) {
-        emissive = emissive / hit.bsdf.pdf(hit.out_dir, scatter.direction);
+    if (hit.bsdf.is_discrete()) {
+        Scatter scatter = hit.bsdf.scatter(hit.out_dir);
+        Ray ray = Ray(hit.pos, hit.object_to_world.rotate(scatter.direction), Vec2{EPS_F, FLT_MAX}, 0);
+        auto [emissive, reflected] = trace(ray);
+        //Scale by attenuation
+        emissive = emissive * scatter.attenuation;
+        radiance += emissive;
+        return radiance;
     }
-    //Scale by attenuation
-    emissive = emissive * scatter.attenuation;
-    radiance += emissive;
+    
 
     // TODO (PathTrace): Task 6
 
@@ -109,7 +110,27 @@ Spectrum Pathtracer::sample_direct_lighting(const Shading_Info& hit) {
     // we don't know whether it came from the BSDF or the light, so you should use BSDF::evaluate(),
     // BSDF::pdf(), and Pathtracer::area_lights_pdf() to compute the proper weighting.
     // What is the PDF of our sample, given it could have been produced from either source?
-
+    // is_cts
+    if (RNG::coin_flip(0.5f)) {
+        Scatter scatter = hit.bsdf.scatter(hit.out_dir);
+        float pdf = 0.5f*area_lights_pdf(hit.pos, hit.object_to_world.rotate(scatter.direction));
+        pdf += 0.5f*hit.bsdf.pdf(hit.out_dir, scatter.direction);
+        Ray ray = Ray(hit.pos, hit.object_to_world.rotate(scatter.direction), Vec2{EPS_F, FLT_MAX}, 0);
+        auto [emissive, reflected] = trace(ray);
+        emissive = emissive * scatter.attenuation;
+        emissive = emissive / pdf;
+        radiance += emissive;
+        return radiance;
+    }
+    Vec3 sample = sample_area_lights(hit.pos);
+    Vec3 in_dir = hit.world_to_object.rotate(sample);
+    float pdf = 0.5f*area_lights_pdf(hit.pos, sample);
+    pdf += 0.5f*hit.bsdf.pdf(hit.out_dir, in_dir);
+    Ray ray = Ray(hit.pos, sample, Vec2{EPS_F, FLT_MAX}, 0);
+    auto [emissive, reflected] = trace(ray);
+    emissive = emissive * hit.bsdf.evaluate(hit.out_dir, in_dir);
+    emissive = emissive / pdf;
+    radiance += emissive;
     return radiance;
 }
 
