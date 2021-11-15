@@ -24,7 +24,6 @@ Spectrum Pathtracer::trace_pixel(size_t x, size_t y) {
     xy += offset;
     Vec2 scaled = xy / wh;
     Ray ray = camera.generate_ray(scaled);
-    if (RNG::coin_flip(0.0005f)) log_ray(ray, 10.0f);
     ray.depth = max_depth;
 
     // Pathtracer::trace() returns the incoming light split into emissive and reflected components.
