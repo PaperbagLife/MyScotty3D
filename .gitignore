@@ -23,3 +23,13 @@ media/test/
 .gitignore
 handin.tgz
 src/geometry/halfedge.cpp
+media/doge.exr
+media/ennis.exr
+media/field.exr
+media/grace.exr
+media/uffizi.exr
+media/__MACOSX/._doge.exr
+media/__MACOSX/._ennis.exr
+media/__MACOSX/._field.exr
+media/__MACOSX/._grace.exr
+media/__MACOSX/._uffizi.exr

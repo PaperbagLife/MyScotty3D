@@ -21,8 +21,11 @@ Vec3 Sphere::Uniform::sample() const {
 
     // Generate a uniformly random point on the unit sphere.
     // Tip: start with Hemisphere::Uniform
-
-    return Vec3{};
+    Vec3 sample = hemi.sample();
+    if (RNG::coin_flip(0.5f)) {
+        sample.y = -sample.y;
+    }
+    return sample;
 }
 
 Sphere::Image::Image(const HDR_Image& image) {
@@ -52,7 +55,7 @@ float Sphere::Image::pdf(Vec3 dir) const {
     // TODO (PathTracer): Task 7
 
     // What is the PDF of this distribution at a particular direction?
-
+    //how to compute theta is atan2.
     return 0.0f;
 }
 
