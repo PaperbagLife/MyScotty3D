@@ -22,7 +22,6 @@ float Env_Map::pdf(Vec3 dir) const {
 
     // First, return the pdf for a uniform spherical distribution.
     // Second, swap to image_sampler.pdf().
-
     return 1.0f/(4.0f*PI_F);
 }
 
@@ -38,22 +37,19 @@ Spectrum Env_Map::evaluate(Vec3 dir) const {
     int h = (int)std::get<1>(dim);
     float phi = std::atan2(dir.z, dir.x);
     float theta = acos(dir.y);
-    float u = phi/(2*PI_F);
+    float u = phi/(2.0f*PI_F);
     if (u < 0.0f) u += 1.0f;
-    float v = theta/PI_F;
-    if (u < 0.0f || v < 0.0f) {
-        std::cerr<<"reeee\n";
-    }
-    int i = (int)floor(u*w-0.5f);
-    int j = (int)floor(v*h-0.5f);
+    float v = 1.0f - theta/PI_F;
+    int i = (int)floor(u*(float)w-0.5f);
+    int j = (int)floor(v*(float)h-0.5f);
     float s = u*w - ((float)i + 0.5f);
     float t = v*h - ((float)j + 0.5f);
     int f00x = std::max<int>(0, i);
-    int f00y = std::max<int>(0, h-j-1);
+    int f00y = std::max<int>(0, j);
     Spectrum f00S = image.at(f00x, f00y);
     int f10x = std::min<int>(w-1, f00x+1);
     Spectrum f10S = image.at(f10x, f00y);
-    int f01y = std::min<int>(h-1, h-f00y);
+    int f01y = std::min<int>(h-1, f00y);
     Spectrum f01S = image.at(f00x, f01y);
     Spectrum f11S = image.at(f10x, f01y);
     Spectrum result = (1.0f-t) * ((1.0f-s)*f00S + s*f10S) + t * ((1.0f-s)*f01S + s*f11S);
