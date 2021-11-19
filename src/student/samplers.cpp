@@ -98,7 +98,7 @@ float Sphere::Image::pdf(Vec3 dir) const {
     float theta = acos(dir.y);
     float u = phi/(2.0f*PI_F);
     if (u < 0.0f) u += 1.0f;
-    float v = theta/PI_F;
+    float v = 1.0f - theta/PI_F;
     int i = (int)floor(u*w);
     int j = (int)floor(v*h);
     float jacob = (float)(w*h)/(2.0f*PI_F*PI_F*std::sin(theta));
