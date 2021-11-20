@@ -116,9 +116,6 @@ Spectrum Pathtracer::sample_direct_lighting(const Shading_Info& hit) {
         float pdf = 0.5f*area_lights_pdf(hit.pos, hit.object_to_world.rotate(scatter.direction));
         pdf += 0.5f*hit.bsdf.pdf(hit.out_dir, scatter.direction);
         Ray ray = Ray(hit.pos, hit.object_to_world.rotate(scatter.direction), Vec2{EPS_F, FLT_MAX}, 0);
-        if(RNG::coin_flip(0.0003f)) {
-            log_ray(ray, 10.f);
-        }
         auto [emissive, reflected] = trace(ray);
         emissive = emissive * scatter.attenuation;
         emissive = emissive / pdf;
@@ -130,9 +127,6 @@ Spectrum Pathtracer::sample_direct_lighting(const Shading_Info& hit) {
     float pdf = 0.5f*area_lights_pdf(hit.pos, sample);
     pdf += 0.5f*hit.bsdf.pdf(hit.out_dir, in_dir);
     Ray ray = Ray(hit.pos, sample, Vec2{EPS_F, FLT_MAX}, 0);
-    if(RNG::coin_flip(0.0003f)) {
-        log_ray(ray, 10.0f);
-    }
     auto [emissive, reflected] = trace(ray);
     emissive = emissive * hit.bsdf.evaluate(hit.out_dir, in_dir);
     emissive = emissive / pdf;
