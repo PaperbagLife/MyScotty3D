@@ -20,6 +20,11 @@ Mat4 Joint::joint_to_bind() const {
 
     // You will need to traverse the joint heirarchy. This should
     // not take into account Skeleton::base_pos
+    if (is_root()) {
+        return Mat4::I;
+    }
+    // while()
+    
     return Mat4::I;
 }
 

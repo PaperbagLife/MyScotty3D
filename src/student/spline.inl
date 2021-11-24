@@ -46,7 +46,6 @@ template<typename T> T Spline<T>::at(float time) const {
     auto lower = std::prev(upper);
     float t1 = lower->first;
     float t2 = upper->first;
-    std::cerr<<time<<","<<t1<<","<<t2<<"\n";
     T knot1 = lower->second;
     T knot2 = upper->second;
     float t0, t3;
