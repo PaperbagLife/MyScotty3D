@@ -1,7 +1,6 @@
 
 #include "../geometry/spline.h"
 #include "debug.h"
-#include <iostream>
 
 template<typename T>
 T Spline<T>::cubic_unit_spline(float time, const T& position0, const T& position1,
