@@ -29,7 +29,8 @@ Mat4 Joint::joint_to_bind() const {
         disp += curJoint->extent;
         curJoint = curJoint->parent;
     }
-    disp += extent;
+    disp += curJoint->extent;
+    //disp += extent;
     return Mat4::translate(disp);
 }
 
@@ -51,6 +52,7 @@ Mat4 Joint::joint_to_posed() const {
         acc = Mat4::euler(curJoint->pose) * Mat4::translate(curJoint->extent) * acc;
         curJoint = curJoint->parent;
     }
+    acc = Mat4::euler(curJoint->pose) * Mat4::translate(curJoint->extent) * acc;
     acc = acc * Mat4::euler(pose);
     return acc;
 }
@@ -62,7 +64,7 @@ Vec3 Skeleton::end_of(Joint* j) {
     // Return the bind position of the endpoint of joint j in object space.
     // This should take into account Skeleton::base_pos.
     Mat4 acc = j->joint_to_bind();
-    return acc*j->extent + base_pos;
+    return Mat4::translate(base_pos) * acc * j->extent;
 }
 
 Vec3 Skeleton::posed_end_of(Joint* j) {
@@ -72,7 +74,7 @@ Vec3 Skeleton::posed_end_of(Joint* j) {
     // Return the posed position of the endpoint of joint j in object space.
     // This should take into account Skeleton::base_pos.
     Mat4 acc = j->joint_to_posed();
-    return acc*j->extent + base_pos;
+    return Mat4::translate(base_pos) * acc * j->extent;
 }
 
 Mat4 Skeleton::joint_to_bind(const Joint* j) const {
