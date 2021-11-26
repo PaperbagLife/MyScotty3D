@@ -1,5 +1,6 @@
 
 #include "../scene/skeleton.h"
+#define TAU 0.001f;
 
 Vec3 closest_on_line_segment(Vec3 start, Vec3 end, Vec3 point) {
 
@@ -147,6 +148,17 @@ void Joint::compute_gradient(Vec3 target, Vec3 current) {
 
     // Target is the position of the IK handle in skeleton space.
     // Current is the end position of the IK'd joint in skeleton space.
+    Mat4 posed = joint_to_posed();
+    Vec3 jacobx = cross(posed.rotate(Vec3{1.0f, 0.0f, 0.0f}), current - posed*Vec3());
+    Vec3 jacoby = cross(posed.rotate(Vec3{0.0f, 1.0f, 0.0f}), current - posed*Vec3());
+    Vec3 jacobz = cross(posed.rotate(Vec3{0.0f, 0.0f, 1.0f}), current - posed*Vec3());
+    float gradientx = dot(jacobx, current - target);
+    float gradienty = dot(jacoby, current - target);
+    float gradientz = dot(jacobz, current - target);
+    if (!is_root()){
+        parent->compute_gradient(target, current);
+    }
+    angle_gradient += Vec3(gradientx, gradienty, gradientz);
 }
 
 void Skeleton::step_ik(std::vector<IK_Handle*> active_handles) {
@@ -154,4 +166,17 @@ void Skeleton::step_ik(std::vector<IK_Handle*> active_handles) {
     // TODO(Animation): Task 2
 
     // Do several iterations of Jacobian Transpose gradient descent for IK
+    for(size_t iter = 0; iter < 55; iter++) {
+        for(size_t i = 0; i < active_handles.size(); i++) {
+            IK_Handle *handle = active_handles[i];
+            handle->joint->compute_gradient(handle->target, posed_end_of(handle->joint) - base_pos);
+            
+        }
+        auto update = [](Joint *j) {
+            j->pose -= (j->angle_gradient) * TAU;
+            j->angle_gradient = Vec3();
+        };
+        for_joints(update);
+    }
+
 }
