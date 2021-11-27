@@ -7,7 +7,14 @@ Vec3 closest_on_line_segment(Vec3 start, Vec3 end, Vec3 point) {
     // TODO(Animation): Task 3
 
     // Return the closest point to 'point' on the line segment from start to end
-    return Vec3{};
+    Vec3 gradient = end - start;
+    float len = gradient.norm();
+    gradient.normalize();
+    Vec3 v = point - start;
+    float d = dot(v, gradient);
+    if (d > len) d = len;
+    if (d < 0.0f) d = 0.0f;
+    return start + gradient * d;
 }
 
 Mat4 Joint::joint_to_bind() const {
@@ -109,10 +116,20 @@ void Skeleton::find_joints(const GL::Mesh& mesh, std::vector<std::vector<Joint*>
 
     // For each i in [0, verts.size()), map[i] should contain the list of joints that
     // effect vertex i. Note that i is NOT Vert::id! i is the index in verts.
-
-    for_joints([&](Joint* j) {
-        // What vertices does joint j effect?
-    });
+    for(size_t i = 0; i < verts.size(); i++) {
+        for_joints([&](Joint* j) {
+            // What vertices does joint j effect?
+            Mat4 j2b = joint_to_bind(j);
+            Vec3 end = (j2b * j->extent);
+            Vec3 diff = closest_on_line_segment(j2b*Vec3(), end, verts[i].pos) - verts[i].pos;
+            float dist = diff.norm();
+            if (j-> radius >= dist) {
+                map[i].push_back(j);
+            } 
+        });
+        
+    }
+    
 }
 
 void Skeleton::skin(const GL::Mesh& input, GL::Mesh& output,
@@ -132,6 +149,32 @@ void Skeleton::skin(const GL::Mesh& input, GL::Mesh& output,
     for(size_t i = 0; i < verts.size(); i++) {
 
         // Skin vertex i. Note that its position is given in object bind space.
+        float sumInvDist = 0.0f;
+        std::vector<Joint*> joints = map[i];
+        std::vector<float> invdists;
+        for(size_t k = 0; k < joints.size(); k++) {
+            Joint* j = joints[k];
+            Mat4 j2b = joint_to_bind(j);
+            Vec3 end = (j2b * j->extent);
+            Vec3 diff = closest_on_line_segment(j2b*Vec3{}, end, verts[i].pos) - verts[i].pos;
+            float dist = diff.norm();
+            sumInvDist += 1.0f/dist;
+            invdists.push_back(1.0f/dist);
+        }
+        Vec3 newPos;
+        Vec3 newNorm;
+        for(size_t k = 0; k < joints.size(); k++) {
+            Joint* j = joints[k];
+            float wij = invdists[k]/sumInvDist;
+            Mat4 j2p = joint_to_posed(j);
+            Mat4 j2b = joint_to_bind(j);
+            Vec3 vij = j2p * (j2b.inverse() * verts[i].pos);
+            Vec3 vijnorm = j2p * (j2b.inverse() * verts[i].norm);
+            newPos += wij * vij;
+            newNorm += wij * vijnorm;
+        }
+        verts[i].pos = newPos;
+        verts[i].norm = newNorm;
     }
 
     std::vector<GL::Mesh::Index> idxs = input.indices();
